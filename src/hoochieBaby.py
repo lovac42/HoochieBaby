@@ -2,14 +2,12 @@
 # Copyright: (C) 2018 Lovac42
 # Support: https://github.com/lovac42/HoochieBaby
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
-# Version: 0.0.1
+# Version: 0.0.2
 
 
 import random
 import anki.sched
 from aqt import mw
-from anki.utils import ids2str, intTime
-# from aqt.utils import showText
 from anki.hooks import wrap
 
 from anki import version
@@ -19,30 +17,32 @@ ANKI21 = version.startswith("2.1.")
 def getCard(self, _old):
     qc = self.col.conf
     if qc.get("hoochieBaby", False):
+        c=None #ret card
+        self._fillLrn() #ensure lrn queue is built
 
         type=random.randint(0,3)
         if type==1:
-            c = self._getLrnCard(collapse=True)
-            if c: return c
+            try: #Ensure cards don't repeat as lrn card back-to-back (from revQ to lrnQ)
+                id=self._lrnQueue[0][1]
+                lstId=mw.reviewer._answeredIds[-1]
+                if id!=lstId:
+                    c = self._getLrnCard(collapse=True)
+            except IndexError: pass
         elif type==2:
             c = self._getLrnDayCard()
-            if c: return c
         elif type==3:
             c = self._getNewCard()
-            if c: return c
-        c = self._getRevCard()
+
+        if not c:
+            c = self._getRevCard()
         if c: return c
-
     return _old(self)
-
 
 
 # day learning
 def fillLrnDay(self, _old):
-    if not self.lrnCount:
-        return False
-    if self._lrnDayQueue:
-        return True
+    if not self.lrnCount: return False
+    if self._lrnDayQueue: return True
 
     qc = self.col.conf
     if not qc.get("hoochieBaby", False):
@@ -59,39 +59,15 @@ order by due asc limit ?"""%self._deckLimit(),
         return True
 
 
-
-# sub-day learning
-#FROM: anki.schedv2.Scheduler._fillLrn
-#MODS: Added shuffle
-def fillLrn(self, _old):
-    if not self.lrnCount:
-        return False
-    if self._lrnQueue:
-        return True
-
-    qc = self.col.conf
-    if not qc.get("hoochieBaby", False):
-        return _old(self)
-
-    cutoff = intTime() + self.col.conf['collapseTime']
-    self._lrnQueue = self.col.db.all("""
-select due, id from cards where
-did in %s and queue in (1,4) and due < ?
-order by due asc limit ?"""%self._deckLimit(),
-                      cutoff, self.queueLimit)
-    if self._lrnQueue:
-        r = random.Random()
-        r.shuffle(self._lrnQueue)
-        return True
-
+#REMOVED patch for: anki.schedv2.Scheduler._fillLrn
+# v2 uses heappush with collapseTime in _answerLrnCard()
+# v1 uses heappush with dayCutoff time, that blocks the patched queue from rebuilding.
 
 anki.sched.Scheduler._getCard = wrap(anki.sched.Scheduler._getCard, getCard, 'around')
-anki.sched.Scheduler._fillLrn = wrap(anki.sched.Scheduler._fillLrn, fillLrn, 'around')
 anki.sched.Scheduler._fillLrnDay = wrap(anki.sched.Scheduler._fillLrnDay, fillLrnDay, 'around')
 if ANKI21:
     import anki.schedv2
     anki.schedv2.Scheduler._getCard = wrap(anki.schedv2.Scheduler._getCard, getCard, 'around')
-    anki.schedv2.Scheduler._fillLrn = wrap(anki.schedv2.Scheduler._fillLrn, fillLrn, 'around')
     anki.schedv2.Scheduler._fillLrnDay = wrap(anki.schedv2.Scheduler._fillLrnDay, fillLrnDay, 'around')
 
 
