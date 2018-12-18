@@ -2,8 +2,17 @@
 # Copyright: (C) 2018 Lovac42
 # Support: https://github.com/lovac42/HoochieBaby
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
-# Version: 0.0.2
+# Version: 0.0.3
 
+
+# == User Config =========================================
+
+# This is used to block lapsed cards from showing up
+# as learning cards right away. 3-5 is a good range.
+CARD_BLOCK = 3  # 1 or greater
+
+# == End Config ==========================================
+##########################################################
 
 import random
 import anki.sched
@@ -18,14 +27,14 @@ def getCard(self, _old):
     qc = self.col.conf
     if qc.get("hoochieBaby", False):
         c=None #ret card
-        self._fillLrn() #ensure lrn queue is built
+        self._fillLrn() #REQUIRED: Ensures lrn queue is built before any lapses are pushed onto the stack
 
         type=random.randint(0,3)
         if type==1:
             try: #Ensure cards don't repeat as lrn card back-to-back (from revQ to lrnQ)
                 id=self._lrnQueue[0][1]
-                lstId=mw.reviewer._answeredIds[-1]
-                if id!=lstId:
+                lstIds=mw.reviewer._answeredIds[-CARD_BLOCK:]
+                if id not in lstIds:
                     c = self._getLrnCard(collapse=True)
             except IndexError: pass
         elif type==2:
