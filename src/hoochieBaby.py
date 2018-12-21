@@ -71,6 +71,7 @@ order by due asc limit ?"""%self._deckLimit(),
 #REMOVED patch for: anki.schedv2.Scheduler._fillLrn
 # v2 uses heappush with collapseTime in _answerLrnCard()
 # v1 uses heappush with dayCutoff time, that blocks the patched queue from rebuilding.
+# heappush and heappop are sorted, so can't add shuffle
 
 anki.sched.Scheduler._getCard = wrap(anki.sched.Scheduler._getCard, getCard, 'around')
 anki.sched.Scheduler._fillLrnDay = wrap(anki.sched.Scheduler._fillLrnDay, fillLrnDay, 'around')
