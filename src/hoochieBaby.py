@@ -2,7 +2,7 @@
 # Copyright: (C) 2018 Lovac42
 # Support: https://github.com/lovac42/HoochieBaby
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
-# Version: 0.0.3
+# Version: 0.0.4
 
 
 # == User Config =========================================
@@ -57,7 +57,7 @@ def fillLrnDay(self, _old):
     if not qc.get("hoochieBaby", False):
         return _old(self)
 
-    self._lrnDayQueue = self.col.db.all("""
+    self._lrnDayQueue = self.col.db.list("""
 select id from cards where
 did in %s and queue = 3 and due <= ?
 order by due asc limit ?"""%self._deckLimit(),
