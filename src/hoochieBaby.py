@@ -2,7 +2,7 @@
 # Copyright: (C) 2018 Lovac42
 # Support: https://github.com/lovac42/HoochieBaby
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
-# Version: 0.0.4
+# Version: 0.0.5
 
 
 # == User Config =========================================
@@ -25,7 +25,7 @@ ANKI21 = version.startswith("2.1.")
 
 def getCard(self, _old):
     qc = self.col.conf
-    if qc.get("hoochieBaby", False):
+    if qc.get("hoochieBaby", 0) == 2:
         c=None #ret card
         self._fillLrn() #REQUIRED: Ensures lrn queue is built before any lapses are pushed onto the stack
 
@@ -54,7 +54,7 @@ def fillLrnDay(self, _old):
     if self._lrnDayQueue: return True
 
     qc = self.col.conf
-    if not qc.get("hoochieBaby", False):
+    if not qc.get("hoochieBaby",0):
         return _old(self)
 
     self._lrnDayQueue = self.col.db.list("""
@@ -81,6 +81,7 @@ if ANKI21:
     anki.schedv2.Scheduler._fillLrnDay = wrap(anki.schedv2.Scheduler._fillLrnDay, fillLrnDay, 'around')
 
 
+
 ##################################################
 #
 #  GUI stuff, adds preference menu options
@@ -96,22 +97,47 @@ if ANKI21:
 else:
     from PyQt4 import QtCore, QtGui as QtWidgets
 
-def setupUi(self, Preferences):
-    r=self.gridLayout_4.rowCount()
-    self.hoochieBaby = QtWidgets.QCheckBox(self.tab_1)
-    self.hoochieBaby.setText(_('Hoochie Baby! Queue Controller'))
-    self.gridLayout_4.addWidget(self.hoochieBaby, r, 0, 1, 3)
 
-def __init__(self, mw):
+def setupUi(self, Preferences):
+    try:
+        grid=self.lrnStageGLayout
+    except AttributeError:
+        self.lrnStage=QtWidgets.QWidget()
+        self.tabWidget.addTab(self.lrnStage, "Muffins")
+        self.lrnStageGLayout=QtWidgets.QGridLayout()
+        self.lrnStageVLayout=QtWidgets.QVBoxLayout(self.lrnStage)
+        self.lrnStageVLayout.addLayout(self.lrnStageGLayout)
+        spacerItem=QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.lrnStageVLayout.addItem(spacerItem)
+
+    r=self.lrnStageGLayout.rowCount()
+    self.hoochieBaby=QtWidgets.QCheckBox(self.lrnStage)
+    self.hoochieBaby.setTristate(True)
+    self.hoochieBaby.setText(_('Hoochie Baby! Queue Controller'))
+    self.lrnStageGLayout.addWidget(self.hoochieBaby, r, 0, 1, 3)
+    self.hoochieBaby.toggled.connect(lambda:toggle(self))
+
+
+def toggle(self):
+    if self.hoochieBaby.checkState():
+        try: #no hoochieBaby addon
+            if self.muffinTops.checkState():
+                self.hoochieBaby.setCheckState(1)
+        except: pass
+
+
+def load(self, mw):
     qc = self.mw.col.conf
     cb=qc.get("hoochieBaby", 0)
     self.form.hoochieBaby.setCheckState(cb)
+    toggle(self.form)
 
-def accept(self):
+
+def save(self):
+    toggle(self.form)
     qc = self.mw.col.conf
     qc['hoochieBaby']=self.form.hoochieBaby.checkState()
 
 aqt.forms.preferences.Ui_Preferences.setupUi = wrap(aqt.forms.preferences.Ui_Preferences.setupUi, setupUi, "after")
-aqt.preferences.Preferences.__init__ = wrap(aqt.preferences.Preferences.__init__, __init__, "after")
-aqt.preferences.Preferences.accept = wrap(aqt.preferences.Preferences.accept, accept, "before")
-
+aqt.preferences.Preferences.__init__ = wrap(aqt.preferences.Preferences.__init__, load, "after")
+aqt.preferences.Preferences.accept = wrap(aqt.preferences.Preferences.accept, save, "before")
