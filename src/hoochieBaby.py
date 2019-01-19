@@ -2,7 +2,7 @@
 # Copyright: (C) 2018 Lovac42
 # Support: https://github.com/lovac42/HoochieBaby
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
-# Version: 0.0.5
+# Version: 0.0.6
 
 
 # == User Config =========================================
@@ -115,15 +115,25 @@ def setupUi(self, Preferences):
     self.hoochieBaby.setTristate(True)
     self.hoochieBaby.setText(_('Hoochie Baby! Queue Controller'))
     self.lrnStageGLayout.addWidget(self.hoochieBaby, r, 0, 1, 3)
-    self.hoochieBaby.toggled.connect(lambda:toggle(self))
+    self.hoochieBaby.clicked.connect(lambda:toggle(self))
 
 
 def toggle(self):
-    if self.hoochieBaby.checkState():
+    checked=self.hoochieBaby.checkState()
+    if checked==2:
         try: #no hoochieBaby addon
             if self.muffinTops.checkState():
-                self.hoochieBaby.setCheckState(1)
+                self.hoochieBaby.setCheckState(0)
+                checked=0
         except: pass
+
+    if checked==1:
+        txt='Hoochie Baby! Randomize DayLrnQ'
+    elif checked==2:
+        txt='Hoochie Baby! DayLrnQ + QController'
+    else:
+        txt='Hoochie Baby! Queue Controller'
+    self.hoochieBaby.setText(_(txt))
 
 
 def load(self, mw):
@@ -137,6 +147,7 @@ def save(self):
     toggle(self.form)
     qc = self.mw.col.conf
     qc['hoochieBaby']=self.form.hoochieBaby.checkState()
+
 
 aqt.forms.preferences.Ui_Preferences.setupUi = wrap(aqt.forms.preferences.Ui_Preferences.setupUi, setupUi, "after")
 aqt.preferences.Preferences.__init__ = wrap(aqt.preferences.Preferences.__init__, load, "after")
