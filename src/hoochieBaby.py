@@ -2,7 +2,7 @@
 # Copyright: (C) 2018 Lovac42
 # Support: https://github.com/lovac42/HoochieBaby
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
-# Version: 0.0.6
+# Version: 0.0.7
 
 
 # == User Config =========================================
@@ -12,6 +12,30 @@
 CARD_BLOCK = 3  # 1 or greater
 
 # == End Config ==========================================
+
+
+
+CUSTOM_SORT = {
+  0:["None (Shuffled)", "order by due"],
+
+# == User Config2 =========================================
+
+  1:["Young first",  "order by ivl asc"],
+  2:["Mature first", "order by ivl desc"],
+  3:["Low reps",     "order by reps asc"],
+  4:["High reps",    "order by reps desc"],
+  5:["Low ease factor",  "order by factor asc"],
+  6:["High ease factor", "order by factor desc"],
+  7:["Low lapses",   "order by lapses asc"],
+  8:["High lapses",  "order by lapses desc"],
+  9:["Overdues",     "order by due asc"],
+ 10:["Dues",         "order by due desc"]
+
+# == End Config2 ==========================================
+
+}
+
+
 ##########################################################
 
 import random
@@ -57,14 +81,22 @@ def fillLrnDay(self, _old):
     if not qc.get("hoochieBaby",0):
         return _old(self)
 
+    sortLevel=qc.get("hoochieBabySort", 0)
+    assert sortLevel < len(CUSTOM_SORT)
+    sortBy=CUSTOM_SORT[sortLevel][1]
+
     self._lrnDayQueue = self.col.db.list("""
 select id from cards where
 did in %s and queue = 3 and due <= ?
-order by due asc limit ?"""%self._deckLimit(),
-                self.today, self.queueLimit)
+%s limit ?"""%(self._deckLimit(),sortBy),
+               self.today, self.queueLimit)
+
     if self._lrnDayQueue:
-        r = random.Random()
-        r.shuffle(self._lrnDayQueue)
+        if sortLevel:
+            self._lrnDayQueue.reverse() #preserve order
+        else:
+            r = random.Random()
+            r.shuffle(self._lrnDayQueue)
         return True
 
 
@@ -117,6 +149,21 @@ def setupUi(self, Preferences):
     self.lrnStageGLayout.addWidget(self.hoochieBaby, r, 0, 1, 3)
     self.hoochieBaby.clicked.connect(lambda:toggle(self))
 
+    r+=1
+    self.hoochieBabySortLbl=QtWidgets.QLabel(self.lrnStage)
+    self.hoochieBabySortLbl.setText(_("      Sort By:"))
+    self.lrnStageGLayout.addWidget(self.hoochieBabySortLbl, r, 0, 1, 1)
+
+    self.hoochieBabySort = QtWidgets.QComboBox(self.lrnStage)
+    if ANKI21:
+        itms=CUSTOM_SORT.items()
+    else:
+        itms=CUSTOM_SORT.iteritems()
+    for i,v in itms:
+        self.hoochieBabySort.addItem(_(""))
+        self.hoochieBabySort.setItemText(i, _(v[0]))
+    self.lrnStageGLayout.addWidget(self.hoochieBabySort, r, 1, 1, 2)
+
 
 def toggle(self):
     checked=self.hoochieBaby.checkState()
@@ -127,19 +174,26 @@ def toggle(self):
                 checked=0
         except: pass
 
+    grayout=False
     if checked==1:
         txt='Hoochie Baby! Randomize DayLrnQ'
     elif checked==2:
         txt='Hoochie Baby! DayLrnQ + QController'
     else:
+        grayout=True
         txt='Hoochie Baby! Queue Controller'
+
     self.hoochieBaby.setText(_(txt))
+    self.hoochieBabySort.setDisabled(grayout)
+    self.hoochieBabySortLbl.setDisabled(grayout)
 
 
 def load(self, mw):
     qc = self.mw.col.conf
     cb=qc.get("hoochieBaby", 0)
     self.form.hoochieBaby.setCheckState(cb)
+    idx=qc.get("hoochieBabySort", 0)
+    self.form.hoochieBabySort.setCurrentIndex(idx)
     toggle(self.form)
 
 
@@ -147,6 +201,7 @@ def save(self):
     toggle(self.form)
     qc = self.mw.col.conf
     qc['hoochieBaby']=self.form.hoochieBaby.checkState()
+    qc['hoochieBabySort']=self.form.hoochieBabySort.currentIndex()
 
 
 aqt.forms.preferences.Ui_Preferences.setupUi = wrap(aqt.forms.preferences.Ui_Preferences.setupUi, setupUi, "after")
