@@ -15,23 +15,24 @@ CARD_BLOCK = 3  # 1 or greater
 
 
 CUSTOM_SORT = {
-  0:["None (Shuffled)", "order by due"],
+  0:["None (Shuffled)", "order by due, random()"],
 
 # == User Config2 =========================================
 
-  1:["Young first",  "order by ivl asc"],
-  2:["Mature first", "order by ivl desc"],
-  3:["Low reps",     "order by reps asc"],
-  4:["High reps",    "order by reps desc"],
-  5:["Low ease factor",  "order by factor asc"],
-  6:["High ease factor", "order by factor desc"],
-  7:["Low lapses",   "order by lapses asc"],
-  8:["High lapses",  "order by lapses desc"],
-  9:["Overdues",     "order by due asc"],
- 10:["Dues",         "order by due desc"]
+  1:["Young first",  "order by ivl asc, random()"],
+  2:["Mature first", "order by ivl desc, random()"],
+  3:["Low reps",     "order by reps asc, random()"],
+  4:["High reps",    "order by reps desc, random()"],
+  5:["Low ease factor",  "order by factor asc, random()"],
+  6:["High ease factor", "order by factor desc, random()"],
+  7:["Low lapses",   "order by lapses asc, random()"],
+  8:["High lapses",  "order by lapses desc, random()"],
+  9:["Overdues",     "order by due asc, random()"],
+ 10:["Dues",         "order by due desc, random()"],
 
 # == End Config2 ==========================================
 
+ 11:["Unrestricted Random (HighCPU)",  "order by random()"]
 }
 
 
@@ -121,12 +122,13 @@ if ANKI21:
 import aqt
 import aqt.preferences
 from aqt.qt import *
+from anki.lang import _
 
 
-if ANKI21:
-    from PyQt5 import QtCore, QtGui, QtWidgets
-else:
+try:
     from PyQt4 import QtCore, QtGui as QtWidgets
+except:
+    from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 def setupUi(self, Preferences):
@@ -150,7 +152,7 @@ def setupUi(self, Preferences):
 
     r+=1
     self.hoochieBabySortLbl=QtWidgets.QLabel(self.lrnStage)
-    self.hoochieBabySortLbl.setText(_("      Sort By:"))
+    self.hoochieBabySortLbl.setText(_("      Sort DayLrnQ By:"))
     self.lrnStageGLayout.addWidget(self.hoochieBabySortLbl, r, 0, 1, 1)
 
     self.hoochieBabySort = QtWidgets.QComboBox(self.lrnStage)
