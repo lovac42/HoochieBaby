@@ -4,8 +4,6 @@
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
 
 
-
-
 import aqt
 import aqt.preferences
 from aqt.qt import *
@@ -14,8 +12,8 @@ from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
 from .lib.com.lovac42.anki.version import ANKI21, ANKI20
-# from .lib.com.lovac42.anki.gui.checkbox import TristateCheckbox
-# from .lib.com.lovac42.anki.gui import muffins
+from .lib.com.lovac42.anki.gui.checkbox import TristateCheckbox
+from .lib.com.lovac42.anki.gui import muffins
 
 
 if ANKI21:
@@ -25,40 +23,39 @@ else:
 
 
 def setupUi(self, Preferences):
-    try:
-        grid=self.lrnStageGLayout
-    except AttributeError:
-        self.lrnStage=QtWidgets.QWidget()
-        self.tabWidget.addTab(self.lrnStage, "Muffins")
-        self.lrnStageGLayout=QtWidgets.QGridLayout()
-        self.lrnStageVLayout=QtWidgets.QVBoxLayout(self.lrnStage)
-        self.lrnStageVLayout.addLayout(self.lrnStageGLayout)
-        spacerItem=QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.lrnStageVLayout.addItem(spacerItem)
+    grid_layout = muffins.getMuffinsTab(self)
+    r = grid_layout.rowCount()
 
-    r=self.lrnStageGLayout.rowCount()
-    self.hoochieBaby=QtWidgets.QCheckBox(self.lrnStage)
-    self.hoochieBaby.setTristate(True)
-    self.hoochieBaby.setText(_('Hoochie Baby! Queue Controller'))
-    self.lrnStageGLayout.addWidget(self.hoochieBaby, r, 0, 1, 3)
+    baby_groupbox = QtWidgets.QGroupBox(self.lrnStage)
+    baby_groupbox.setTitle("Hoochie Baby!")
+    baby_grid_layout = QtWidgets.QGridLayout(baby_groupbox)
+    grid_layout.addWidget(baby_groupbox, r, 0, 1, 3)
+
+    self.hoochieBaby = TristateCheckbox(baby_groupbox)
+    self.hoochieBaby.setDescriptions({
+        Qt.Unchecked:        "Hoochie Baby addon has been disabled",
+        Qt.PartiallyChecked: "Randomize day-learning queue only",
+        Qt.Checked:          "Randomize day-learning queue and jump between new-rev-lrn",
+    })
+    baby_grid_layout.addWidget(self.hoochieBaby, r, 0, 1, 3)
     self.hoochieBaby.clicked.connect(lambda:toggle(self))
 
     r+=1
-    self.hoochieBabySortLbl=QtWidgets.QLabel(self.lrnStage)
-    self.hoochieBabySortLbl.setText(_("      Sort DayLrnQ By:"))
-    self.lrnStageGLayout.addWidget(self.hoochieBabySortLbl, r, 0, 1, 1)
+    self.hoochieBabySortLbl = QtWidgets.QLabel(baby_groupbox)
+    self.hoochieBabySortLbl.setText(_("      Sort day-learning cards by:"))
+    baby_grid_layout.addWidget(self.hoochieBabySortLbl, r, 0, 1, 1)
 
-    self.hoochieBabySort = QtWidgets.QComboBox(self.lrnStage)
+    self.hoochieBabySort = QtWidgets.QComboBox(baby_groupbox)
     sort_itms = CUSTOM_SORT.iteritems if ANKI20 else CUSTOM_SORT.items
     for i,v in sort_itms():
-        self.hoochieBabySort.addItem(_(""))
+        self.hoochieBabySort.addItem("")
         self.hoochieBabySort.setItemText(i, _(v[0]))
-    self.lrnStageGLayout.addWidget(self.hoochieBabySort, r, 1, 1, 2)
+    baby_grid_layout.addWidget(self.hoochieBabySort, r, 1, 1, 3)
 
 
 def load(self, mw):
     qc = self.mw.col.conf
-    cb=qc.get("hoochieBaby", 0)
+    cb=qc.get("hoochieBaby", Qt.Unchecked)
     self.form.hoochieBaby.setCheckState(cb)
     idx=qc.get("hoochieBabySort", 0)
     self.form.hoochieBabySort.setCurrentIndex(idx)
@@ -68,31 +65,20 @@ def load(self, mw):
 def save(self):
     toggle(self.form)
     qc = self.mw.col.conf
-    qc['hoochieBaby']=self.form.hoochieBaby.checkState()
+    qc['hoochieBaby']=int(self.form.hoochieBaby.checkState())
     qc['hoochieBabySort']=self.form.hoochieBabySort.currentIndex()
 
 
 def toggle(self):
-    checked=self.hoochieBaby.checkState()
-    if checked==2:
-        try: #no hoochieBaby addon
+    state = self.hoochieBaby.checkState()
+    if state == Qt.Checked:
+        try: #no muffinTops addon
             if self.muffinTops.checkState():
-                self.hoochieBaby.setCheckState(0)
-                checked=0
+                self.hoochieBaby.setCheckState(Qt.Unchecked)
+                state = Qt.Unchecked
         except: pass
-
-    grayout=False
-    if checked==1:
-        txt='Hoochie Baby! Randomize DayLrnQ'
-    elif checked==2:
-        txt='Hoochie Baby! DayLrnQ + QController'
-    else:
-        grayout=True
-        txt='Hoochie Baby! Queue Controller'
-
-    self.hoochieBaby.setText(_(txt))
-    self.hoochieBabySort.setDisabled(grayout)
-    self.hoochieBabySortLbl.setDisabled(grayout)
+    self.hoochieBabySort.setDisabled(state == Qt.Unchecked)
+    self.hoochieBabySortLbl.setDisabled(state == Qt.Unchecked)
 
 
 # Wrap Crap #################

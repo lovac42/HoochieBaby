@@ -19,9 +19,7 @@ from aqt import mw
 from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
-
-from anki import version
-ANKI21 = version.startswith("2.1.")
+from .lib.com.lovac42.anki.version import ANKI20
 
 
 def getCard(self, _old):
@@ -84,8 +82,7 @@ did in %s and queue = 3 and due <= ?
 
 anki.sched.Scheduler._getCard = wrap(anki.sched.Scheduler._getCard, getCard, 'around')
 anki.sched.Scheduler._fillLrnDay = wrap(anki.sched.Scheduler._fillLrnDay, fillLrnDay, 'around')
-if ANKI21:
+if not ANKI20:
     import anki.schedv2
     anki.schedv2.Scheduler._getCard = wrap(anki.schedv2.Scheduler._getCard, getCard, 'around')
     anki.schedv2.Scheduler._fillLrnDay = wrap(anki.schedv2.Scheduler._fillLrnDay, fillLrnDay, 'around')
-
