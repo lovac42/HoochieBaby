@@ -13,35 +13,12 @@ CARD_BLOCK = 3  # 1 or greater
 # == End Config ==========================================
 
 
-
-CUSTOM_SORT = {
-  0:["None (Shuffled)", "order by due, random()"],
-
-# == User Config2 =========================================
-
-  1:["Young first",  "order by ivl asc, random()"],
-  2:["Mature first", "order by ivl desc, random()"],
-  3:["Low reps",     "order by reps asc, random()"],
-  4:["High reps",    "order by reps desc, random()"],
-  5:["Low ease factor",  "order by factor asc, random()"],
-  6:["High ease factor", "order by factor desc, random()"],
-  7:["Low lapses",   "order by lapses asc, random()"],
-  8:["High lapses",  "order by lapses desc, random()"],
-  9:["Overdues",     "order by due asc, random()"],
- 10:["Dues",         "order by due desc, random()"],
-
-# == End Config2 ==========================================
-
- 11:["Unrestricted Random (HighCPU)",  "order by random()"]
-}
-
-
-##########################################################
-
 import random
 import anki.sched
 from aqt import mw
 from anki.hooks import wrap
+
+from .sort import CUSTOM_SORT
 
 from anki import version
 ANKI21 = version.startswith("2.1.")
@@ -112,99 +89,3 @@ if ANKI21:
     anki.schedv2.Scheduler._getCard = wrap(anki.schedv2.Scheduler._getCard, getCard, 'around')
     anki.schedv2.Scheduler._fillLrnDay = wrap(anki.schedv2.Scheduler._fillLrnDay, fillLrnDay, 'around')
 
-
-
-##################################################
-#
-#  GUI stuff, adds preference menu options
-#
-#################################################
-import aqt
-import aqt.preferences
-from aqt.qt import *
-from anki.lang import _
-
-
-try:
-    from PyQt4 import QtCore, QtGui as QtWidgets
-except:
-    from PyQt5 import QtCore, QtGui, QtWidgets
-
-
-def setupUi(self, Preferences):
-    try:
-        grid=self.lrnStageGLayout
-    except AttributeError:
-        self.lrnStage=QtWidgets.QWidget()
-        self.tabWidget.addTab(self.lrnStage, "Muffins")
-        self.lrnStageGLayout=QtWidgets.QGridLayout()
-        self.lrnStageVLayout=QtWidgets.QVBoxLayout(self.lrnStage)
-        self.lrnStageVLayout.addLayout(self.lrnStageGLayout)
-        spacerItem=QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.lrnStageVLayout.addItem(spacerItem)
-
-    r=self.lrnStageGLayout.rowCount()
-    self.hoochieBaby=QtWidgets.QCheckBox(self.lrnStage)
-    self.hoochieBaby.setTristate(True)
-    self.hoochieBaby.setText(_('Hoochie Baby! Queue Controller'))
-    self.lrnStageGLayout.addWidget(self.hoochieBaby, r, 0, 1, 3)
-    self.hoochieBaby.clicked.connect(lambda:toggle(self))
-
-    r+=1
-    self.hoochieBabySortLbl=QtWidgets.QLabel(self.lrnStage)
-    self.hoochieBabySortLbl.setText(_("      Sort DayLrnQ By:"))
-    self.lrnStageGLayout.addWidget(self.hoochieBabySortLbl, r, 0, 1, 1)
-
-    self.hoochieBabySort = QtWidgets.QComboBox(self.lrnStage)
-    if ANKI21:
-        itms=CUSTOM_SORT.items()
-    else:
-        itms=CUSTOM_SORT.iteritems()
-    for i,v in itms:
-        self.hoochieBabySort.addItem(_(""))
-        self.hoochieBabySort.setItemText(i, _(v[0]))
-    self.lrnStageGLayout.addWidget(self.hoochieBabySort, r, 1, 1, 2)
-
-
-def toggle(self):
-    checked=self.hoochieBaby.checkState()
-    if checked==2:
-        try: #no hoochieBaby addon
-            if self.muffinTops.checkState():
-                self.hoochieBaby.setCheckState(0)
-                checked=0
-        except: pass
-
-    grayout=False
-    if checked==1:
-        txt='Hoochie Baby! Randomize DayLrnQ'
-    elif checked==2:
-        txt='Hoochie Baby! DayLrnQ + QController'
-    else:
-        grayout=True
-        txt='Hoochie Baby! Queue Controller'
-
-    self.hoochieBaby.setText(_(txt))
-    self.hoochieBabySort.setDisabled(grayout)
-    self.hoochieBabySortLbl.setDisabled(grayout)
-
-
-def load(self, mw):
-    qc = self.mw.col.conf
-    cb=qc.get("hoochieBaby", 0)
-    self.form.hoochieBaby.setCheckState(cb)
-    idx=qc.get("hoochieBabySort", 0)
-    self.form.hoochieBabySort.setCurrentIndex(idx)
-    toggle(self.form)
-
-
-def save(self):
-    toggle(self.form)
-    qc = self.mw.col.conf
-    qc['hoochieBaby']=self.form.hoochieBaby.checkState()
-    qc['hoochieBabySort']=self.form.hoochieBabySort.currentIndex()
-
-
-aqt.forms.preferences.Ui_Preferences.setupUi = wrap(aqt.forms.preferences.Ui_Preferences.setupUi, setupUi, "after")
-aqt.preferences.Preferences.__init__ = wrap(aqt.preferences.Preferences.__init__, load, "after")
-aqt.preferences.Preferences.accept = wrap(aqt.preferences.Preferences.accept, save, "before")
