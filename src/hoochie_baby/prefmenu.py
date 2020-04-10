@@ -52,6 +52,16 @@ def setupUi(self, Preferences):
         self.hoochieBabySort.setItemText(i, _(v[0]))
     baby_grid_layout.addWidget(self.hoochieBabySort, r, 1, 1, 3)
 
+    r+=1
+    footnote_label = QtWidgets.QLabel(baby_groupbox)
+    footnote_label.setText(_("&nbsp;&nbsp;&nbsp;<i>* This addon does not randomize intra-day learning cards, yet.</i>"))
+    baby_grid_layout.addWidget(footnote_label, r, 0, 1, 3)
+
+    r+=1
+    footnote_label = QtWidgets.QLabel(baby_groupbox)
+    footnote_label.setText(_('&nbsp;&nbsp;&nbsp;<i>** Double check your settings for "Learn ahead limit" and RTFM.</i>'))
+    baby_grid_layout.addWidget(footnote_label, r, 0, 1, 3)
+
 
 def load(self, mw):
     qc = self.mw.col.conf
