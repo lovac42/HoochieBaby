@@ -28,7 +28,8 @@ def setupUi(self, Preferences):
         Qt.Checked:          "Randomize day-learning queue and jump between new-rev-lrn",
     })
     baby_grid_layout.addWidget(self.hoochieBaby, r, 0, 1, 3)
-    self.hoochieBaby.clicked.connect(lambda:toggle(self))
+    self.hoochieBaby.clicked.connect(lambda:onClick(self))
+    self.hoochieBaby.onClick = onClick
 
     r+=1
     self.hoochieBabySortLbl = QLabel(baby_groupbox)
@@ -59,27 +60,27 @@ def load(self, mw):
     self.form.hoochieBaby.setCheckState(cb)
     idx = qc.get("hoochieBabySort", 0)
     self.form.hoochieBabySort.setCurrentIndex(idx)
-    toggle(self.form)
+    onClick(self.form)
 
 
 def save(self):
-    toggle(self.form)
+    onClick(self.form)
     qc = self.mw.col.conf
     qc['hoochieBaby']=int(self.form.hoochieBaby.checkState())
     qc['hoochieBabySort']=self.form.hoochieBabySort.currentIndex()
 
 
-def toggle(self):
-    state = self.hoochieBaby.checkState()
+def onClick(form):
+    state = form.hoochieBaby.checkState()
     if state == Qt.Checked:
         try: #no muffinTops addon
-            if self.muffinTops.checkState():
-                self.hoochieBaby.setCheckState(Qt.Unchecked)
+            if form.muffinTops.checkState():
+                form.hoochieBaby.setCheckState(Qt.Unchecked)
                 state = Qt.Unchecked
         except: pass
     grayout = state == Qt.Unchecked
-    self.hoochieBabySort.setDisabled(grayout)
-    self.hoochieBabySortLbl.setDisabled(grayout)
+    form.hoochieBabySort.setDisabled(grayout)
+    form.hoochieBabySortLbl.setDisabled(grayout)
 
 
 # Wrap Crap #################
