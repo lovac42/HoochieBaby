@@ -11,26 +11,16 @@ from anki.lang import _
 from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
-from .lib.com.lovac42.anki.version import ANKI21, ANKI20
+from .lib.com.lovac42.anki.version import ANKI20
 from .lib.com.lovac42.anki.gui.checkbox import TristateCheckbox
 from .lib.com.lovac42.anki.gui import muffins
 
 
-if ANKI21:
-    from PyQt5 import QtCore, QtGui, QtWidgets
-else:
-    from PyQt4 import QtCore, QtGui as QtWidgets
-
-
 def setupUi(self, Preferences):
-    grid_layout = muffins.getMuffinsTab(self)
-    r = grid_layout.rowCount()
+    baby_groupbox = muffins.getMuffinsGroupbox(self, "Hoochie Baby!")
+    baby_grid_layout = QGridLayout(baby_groupbox)
 
-    baby_groupbox = QtWidgets.QGroupBox(self.lrnStage)
-    baby_groupbox.setTitle("Hoochie Baby!")
-    baby_grid_layout = QtWidgets.QGridLayout(baby_groupbox)
-    grid_layout.addWidget(baby_groupbox, r, 0, 1, 3)
-
+    r=0
     self.hoochieBaby = TristateCheckbox(baby_groupbox)
     self.hoochieBaby.setDescriptions({
         Qt.Unchecked:        "Hoochie Baby addon has been disabled",
@@ -41,11 +31,11 @@ def setupUi(self, Preferences):
     self.hoochieBaby.clicked.connect(lambda:toggle(self))
 
     r+=1
-    self.hoochieBabySortLbl = QtWidgets.QLabel(baby_groupbox)
+    self.hoochieBabySortLbl = QLabel(baby_groupbox)
     self.hoochieBabySortLbl.setText(_("      Sort day-learning cards by:"))
     baby_grid_layout.addWidget(self.hoochieBabySortLbl, r, 0, 1, 1)
 
-    self.hoochieBabySort = QtWidgets.QComboBox(baby_groupbox)
+    self.hoochieBabySort = QComboBox(baby_groupbox)
     sort_itms = CUSTOM_SORT.iteritems if ANKI20 else CUSTOM_SORT.items
     for i,v in sort_itms():
         self.hoochieBabySort.addItem("")
@@ -53,21 +43,21 @@ def setupUi(self, Preferences):
     baby_grid_layout.addWidget(self.hoochieBabySort, r, 1, 1, 3)
 
     r+=1
-    footnote_label = QtWidgets.QLabel(baby_groupbox)
+    footnote_label = QLabel(baby_groupbox)
     footnote_label.setText(_("&nbsp;&nbsp;&nbsp;<i>* This addon does not randomize intra-day learning cards, yet.</i>"))
     baby_grid_layout.addWidget(footnote_label, r, 0, 1, 3)
 
     r+=1
-    footnote_label = QtWidgets.QLabel(baby_groupbox)
+    footnote_label = QLabel(baby_groupbox)
     footnote_label.setText(_('&nbsp;&nbsp;&nbsp;<i>** Double check your settings for "Learn ahead limit" and RTFM.</i>'))
     baby_grid_layout.addWidget(footnote_label, r, 0, 1, 3)
 
 
 def load(self, mw):
     qc = self.mw.col.conf
-    cb=qc.get("hoochieBaby", Qt.Unchecked)
+    cb = qc.get("hoochieBaby", Qt.Unchecked)
     self.form.hoochieBaby.setCheckState(cb)
-    idx=qc.get("hoochieBabySort", 0)
+    idx = qc.get("hoochieBabySort", 0)
     self.form.hoochieBabySort.setCurrentIndex(idx)
     toggle(self.form)
 
@@ -87,8 +77,9 @@ def toggle(self):
                 self.hoochieBaby.setCheckState(Qt.Unchecked)
                 state = Qt.Unchecked
         except: pass
-    self.hoochieBabySort.setDisabled(state == Qt.Unchecked)
-    self.hoochieBabySortLbl.setDisabled(state == Qt.Unchecked)
+    grayout = state == Qt.Unchecked
+    self.hoochieBabySort.setDisabled(grayout)
+    self.hoochieBabySortLbl.setDisabled(grayout)
 
 
 # Wrap Crap #################
