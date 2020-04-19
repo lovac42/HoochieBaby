@@ -19,12 +19,19 @@ from aqt import mw
 from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
+from .self_test import run_lrn_tests, run_get_card_tests
 from .lib.com.lovac42.anki.version import ANKI20
+
+RAND = random.Random().shuffle
+
 
 
 def getCard(self, _old):
     qc = self.col.conf
-    if qc.get("hoochieBaby", 0) == 2:
+    state = qc.get("hoochieBaby", 0)
+    run_get_card_tests.state = state
+
+    if state == 2:
         c=None #ret card
         self._fillLrn() #REQUIRED: Ensures lrn queue is built before any lapses are pushed onto the stack
 
@@ -52,9 +59,16 @@ def fillLrnDay(self, _old):
     if not self.lrnCount: return False
     if self._lrnDayQueue: return True
 
+    if self.col.decks.current()['dyn']:
+        run_lrn_tests.state = 3
+        return _old(self)
+
     qc = self.col.conf
     if not qc.get("hoochieBaby",0):
+        run_lrn_tests.state = 0
         return _old(self)
+
+    run_lrn_tests.state = 1
 
     sortLevel=qc.get("hoochieBabySort", 0)
     assert sortLevel < len(CUSTOM_SORT)
@@ -70,9 +84,9 @@ did in %s and queue = 3 and due <= ?
         if sortLevel:
             self._lrnDayQueue.reverse() #preserve order
         else:
-            r = random.Random()
-            r.shuffle(self._lrnDayQueue)
+            RAND(self._lrnDayQueue)
         return True
+
 
 
 #REMOVED patch for: anki.schedv2.Scheduler._fillLrn
@@ -80,9 +94,19 @@ did in %s and queue = 3 and due <= ?
 # v1 uses heappush with dayCutoff time, that blocks the patched queue from rebuilding.
 # heappush and heappop are sorted, so can't add shuffle
 
-anki.sched.Scheduler._getCard = wrap(anki.sched.Scheduler._getCard, getCard, 'around')
-anki.sched.Scheduler._fillLrnDay = wrap(anki.sched.Scheduler._fillLrnDay, fillLrnDay, 'around')
+
+anki.sched.Scheduler._getCard = wrap(
+    anki.sched.Scheduler._getCard, getCard, 'around'
+)
+anki.sched.Scheduler._fillLrnDay = wrap(
+    anki.sched.Scheduler._fillLrnDay, fillLrnDay, 'around'
+)
+
 if not ANKI20:
     import anki.schedv2
-    anki.schedv2.Scheduler._getCard = wrap(anki.schedv2.Scheduler._getCard, getCard, 'around')
-    anki.schedv2.Scheduler._fillLrnDay = wrap(anki.schedv2.Scheduler._fillLrnDay, fillLrnDay, 'around')
+    anki.schedv2.Scheduler._getCard = wrap(
+        anki.schedv2.Scheduler._getCard, getCard, 'around'
+    )
+    anki.schedv2.Scheduler._fillLrnDay = wrap(
+        anki.schedv2.Scheduler._fillLrnDay, fillLrnDay, 'around'
+    )

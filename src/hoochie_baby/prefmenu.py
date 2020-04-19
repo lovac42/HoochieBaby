@@ -12,7 +12,7 @@ from anki.lang import _
 from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
-# from .self_test import run_tests
+from .self_test import run_lrn_tests, run_get_card_tests
 from .lib.com.lovac42.anki.version import ANKI20
 from .lib.com.lovac42.anki.gui.checkbox import TristateCheckbox
 from .lib.com.lovac42.anki.gui import muffins
@@ -70,7 +70,8 @@ def onClick(form):
     state = int(form.hoochieBaby.checkState())
     mw.col.conf['hoochieBaby'] = state
     _updateDisplay(form)
-    # run_tests.testWrap(state)
+    run_lrn_tests.testWrap(state)
+    run_get_card_tests.testWrap(state)
 
 
 def _updateDisplay(form):
