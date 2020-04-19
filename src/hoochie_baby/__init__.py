@@ -6,4 +6,3 @@
 
 from . import prefmenu
 from . import hoochieBaby
-from . import comp
