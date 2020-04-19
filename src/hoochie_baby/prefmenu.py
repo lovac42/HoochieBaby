@@ -6,11 +6,13 @@
 
 import aqt
 import aqt.preferences
+from aqt import mw
 from aqt.qt import *
 from anki.lang import _
 from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
+# from .self_test import run_tests
 from .lib.com.lovac42.anki.version import ANKI20
 from .lib.com.lovac42.anki.gui.checkbox import TristateCheckbox
 from .lib.com.lovac42.anki.gui import muffins
@@ -42,16 +44,17 @@ def setupUi(self, Preferences):
         self.hoochieBabySort.addItem("")
         self.hoochieBabySort.setItemText(i, _(v[0]))
     baby_grid_layout.addWidget(self.hoochieBabySort, r, 1, 1, 3)
+    self.hoochieBabySort.currentIndexChanged.connect(lambda:onChanged(self.hoochieBabySort))
 
     r+=1
-    footnote_label = QLabel(baby_groupbox)
-    footnote_label.setText(_("&nbsp;&nbsp;&nbsp;<i>* This addon does not randomize intra-day learning cards, yet.</i>"))
-    baby_grid_layout.addWidget(footnote_label, r, 0, 1, 3)
+    self.baby_footnoteA = QLabel(baby_groupbox)
+    self.baby_footnoteA.setText(_("&nbsp;&nbsp;&nbsp;<i>* This addon does not randomize intra-day learning cards, yet.</i>"))
+    baby_grid_layout.addWidget(self.baby_footnoteA, r, 0, 1, 3)
 
     r+=1
-    footnote_label = QLabel(baby_groupbox)
-    footnote_label.setText(_('&nbsp;&nbsp;&nbsp;<i>** Double check your settings for "Learn ahead limit" and RTFM.</i>'))
-    baby_grid_layout.addWidget(footnote_label, r, 0, 1, 3)
+    self.baby_footnoteB = QLabel(baby_groupbox)
+    self.baby_footnoteB.setText(_('&nbsp;&nbsp;&nbsp;<i>** Double check your settings for "Learn ahead limit" and RTFM.</i>'))
+    baby_grid_layout.addWidget(self.baby_footnoteB, r, 0, 1, 3)
 
 
 def load(self, mw):
@@ -60,17 +63,17 @@ def load(self, mw):
     self.form.hoochieBaby.setCheckState(cb)
     idx = qc.get("hoochieBabySort", 0)
     self.form.hoochieBabySort.setCurrentIndex(idx)
-    onClick(self.form)
-
-
-def save(self):
-    onClick(self.form)
-    qc = self.mw.col.conf
-    qc['hoochieBaby']=int(self.form.hoochieBaby.checkState())
-    qc['hoochieBabySort']=self.form.hoochieBabySort.currentIndex()
+    _updateDisplay(self.form)
 
 
 def onClick(form):
+    state = int(form.hoochieBaby.checkState())
+    mw.col.conf['hoochieBaby'] = state
+    _updateDisplay(form)
+    # run_tests.testWrap(state)
+
+
+def _updateDisplay(form):
     state = form.hoochieBaby.checkState()
     if state == Qt.Checked:
         try: #no muffinTops addon
@@ -81,6 +84,12 @@ def onClick(form):
     grayout = state == Qt.Unchecked
     form.hoochieBabySort.setDisabled(grayout)
     form.hoochieBabySortLbl.setDisabled(grayout)
+    form.baby_footnoteA.setDisabled(grayout)
+    form.baby_footnoteB.setDisabled(grayout)
+
+
+def onChanged(combobox):
+    mw.col.conf['hoochieBabySort'] = combobox.currentIndex()
 
 
 # Wrap Crap #################
@@ -91,8 +100,4 @@ aqt.forms.preferences.Ui_Preferences.setupUi = wrap(
 
 aqt.preferences.Preferences.__init__ = wrap(
     aqt.preferences.Preferences.__init__, load, "after"
-)
-
-aqt.preferences.Preferences.accept = wrap(
-    aqt.preferences.Preferences.accept, save, "before"
 )
