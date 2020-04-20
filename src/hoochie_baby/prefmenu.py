@@ -12,10 +12,13 @@ from anki.lang import _
 from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
-from .self_test import run_lrn_tests, run_get_card_tests
+from .self_test import run_tests
 from .lib.com.lovac42.anki.version import ANKI20
 from .lib.com.lovac42.anki.gui.checkbox import TristateCheckbox
 from .lib.com.lovac42.anki.gui import muffins
+
+
+loaded = False
 
 
 def setupUi(self, Preferences):
@@ -58,20 +61,26 @@ def setupUi(self, Preferences):
 
 
 def load(self, mw):
+    global loaded
     qc = self.mw.col.conf
     cb = qc.get("hoochieBaby", Qt.Unchecked)
     self.form.hoochieBaby.setCheckState(cb)
     idx = qc.get("hoochieBabySort", 0)
     self.form.hoochieBabySort.setCurrentIndex(idx)
     _updateDisplay(self.form)
+    loaded = True
+
+
+def save(self):
+    global loaded
+    loaded = False
 
 
 def onClick(form):
     state = int(form.hoochieBaby.checkState())
     mw.col.conf['hoochieBaby'] = state
     _updateDisplay(form)
-    run_lrn_tests.testWrap(state)
-    run_get_card_tests.testWrap(state)
+    run_tests.testWrap(state)
 
 
 def _updateDisplay(form):
@@ -90,10 +99,16 @@ def _updateDisplay(form):
 
 
 def onChanged(combobox):
-    mw.col.conf['hoochieBabySort'] = combobox.currentIndex()
+    idx = combobox.currentIndex()
+    mw.col.conf['hoochieBabySort'] = idx
+    if loaded:
+        run_tests.testSort(idx)
 
 
 # Wrap Crap #################
+
+# if point version < 23? Use old wrap
+# TODO: Find the point version for these new hooks.
 
 aqt.forms.preferences.Ui_Preferences.setupUi = wrap(
     aqt.forms.preferences.Ui_Preferences.setupUi, setupUi, "after"
@@ -101,4 +116,8 @@ aqt.forms.preferences.Ui_Preferences.setupUi = wrap(
 
 aqt.preferences.Preferences.__init__ = wrap(
     aqt.preferences.Preferences.__init__, load, "after"
+)
+
+aqt.preferences.Preferences.accept = wrap(
+    aqt.preferences.Preferences.accept, save, "before"
 )

@@ -19,7 +19,7 @@ from aqt import mw
 from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
-from .self_test import run_lrn_tests, run_get_card_tests
+from .self_test import run_tests
 from .lib.com.lovac42.anki.version import ANKI20
 
 RAND = random.Random().shuffle
@@ -29,7 +29,7 @@ RAND = random.Random().shuffle
 def getCard(self, _old):
     qc = self.col.conf
     state = qc.get("hoochieBaby", 0)
-    run_get_card_tests.state = state
+    run_tests.state_gc = state
 
     if state == 2:
         c=None #ret card
@@ -60,15 +60,15 @@ def fillLrnDay(self, _old):
     if self._lrnDayQueue: return True
 
     if self.col.decks.current()['dyn']:
-        run_lrn_tests.state = 3
+        run_tests.state = 3
         return _old(self)
 
     qc = self.col.conf
     if not qc.get("hoochieBaby",0):
-        run_lrn_tests.state = 0
+        run_tests.state = 0
         return _old(self)
 
-    run_lrn_tests.state = 1
+    run_tests.state = 1
 
     sortLevel=qc.get("hoochieBabySort", 0)
     assert sortLevel < len(CUSTOM_SORT)

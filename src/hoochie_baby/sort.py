@@ -4,11 +4,11 @@
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
 
 
+# Note: Except for swapping 0 and 11,
+# Changing these may cause self-test errors
+
 CUSTOM_SORT = {
   0:["None (Shuffled)", "order by due, random()"],
-
-# == User Config =========================================
-
   1:["Young first",  "order by ivl asc, random()"],
   2:["Mature first", "order by ivl desc, random()"],
   3:["Low reps",     "order by reps asc, random()"],
@@ -19,8 +19,5 @@ CUSTOM_SORT = {
   8:["High lapses",  "order by lapses desc, random()"],
   9:["Overdues",     "order by due asc, random()"],
  10:["Dues",         "order by due desc, random()"],
-
-# == End Config ==========================================
-
  11:["Unrestricted Random (HighCPU)",  "order by random()"]
 }

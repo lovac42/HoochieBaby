@@ -7,8 +7,11 @@
 from aqt import mw
 from aqt.utils import tooltip
 
+from .lib.com.lovac42.anki.backend.utils import isSorted
+from .lib.com.lovac42.anki.version import ANKI20
 
-FILTERED_DECK = 3
+if ANKI20:
+    range = xrange
 
 
 class Tests:
@@ -17,66 +20,129 @@ class Tests:
 
     def reset(self):
         self.state = -1
+        self.state_gc = -1
 
+    def isReview(self):
+        if mw.state == "review":
+            tooltip("Baby can't run self-tests during review.", period=1200)
+            return True
 
-class LrnTest(Tests):
+    def setupTestDeck(self):
+        sel = mw.col.decks.selected()
+        mw.col.decks.select(1)
+        # act = mw.col.decks.active()[:]
+        mw.col.sched._lrnDids = [1]
+        # mw.col.conf['activeDecks'] = [1] #rm subdecks
+        mw.col.sched.newCount = 20
+        mw.col.sched.revCount = 20
+        mw.col.sched.lrnCount = 20
+        mw.col.sched._lrnDayQueue = []
+        return sel
+
     def testWrap(self, checkbox):
-        if mw.state != "review":
-            tooltip("Baby can't run self-tests, you are not in the reviewer.", period=1200)
-        elif not mw.col.sched.lrnCount:
-            tooltip("Baby can't run self-tests, you don't have enough dLrn cards.", period=1200)
-        else:
-            self.reset()
-            # Clears queue from blocking test. But this must be
-            # reset to avoid double loading of the same card.
-            mw.col.sched.lrnCount = 20
-            mw.col.sched._lrnDayQueue = []
-            try:
-                mw.col.sched._fillLrnDay()
-            finally:
-                mw.reset()
+        "This tests for addon conflict, to make sure HoochieBaby was wrapped correctly around fillLrnDay()."
+        if self.isReview():
+            return
 
-            if self.state==FILTERED_DECK:
-                tooltip("Baby doesn't work with filtered decks.", period=1200)
-                return
+        self.reset()
+        sel = self.setupTestDeck()
+        try:
+            mw.col.sched._fillLrnDay()
 
             # (0,0) , (1,1) , (2,1)
-            assert checkbox == self.state or (checkbox==2 and self.state==1), "\
-HoochieBaby, self-test failed. Test value was not as expected."
+            assert checkbox == self.state or (checkbox==2 and self.state==1), "HoochieBaby, self-test failed. Test value was not as expected."
 
-            if checkbox:
-                tooltip("Baby was wrapped successfully!", period=800)
-            else:
-                tooltip("Baby was unwrapped...", period=800)
-
-
-
-class GetCardTest(Tests):
-    def testWrap(self, checkbox):
-        if mw.state != "review":
-            tooltip("Baby can't run self-tests, you are not in the reviewer.", period=1200)
-        elif not mw.col.sched.lrnCount and not mw.col.sched.newCount and not mw.col.sched.revCount:
-            tooltip("Baby can't run self-tests, you don't have enough cards.", period=1200)
-        else:
-            self.reset()
-            # Clears queue from blocking test. But this must be
-            # reset to avoid double loading of the same card.
-            mw.col.sched.lrnCount = 20
-            try:
+            if checkbox==2:
                 mw.col.sched.getCard()
-            finally:
-                mw.reset()
 
-            # Filtered decks never calls getCard.
+                # (0,0) , (1,1) , (2,1)
+                assert checkbox == self.state_gc, "HoochieBaby, self-test failed. Test value was not as expected."
 
-            assert checkbox == self.state, "\
-HoochieBaby, self-test failed. Test value was not as expected."
+        finally:
+            mw.col.decks.select(sel)
+            mw.reset()
 
-            if checkbox:
-                tooltip("Baby was wrapped successfully!", period=800)
+        if checkbox==1:
+            tooltip("Baby LrnQ was wrapped successfully!", period=800)
+        elif checkbox==2:
+            tooltip("Baby was wrapped successfully!", period=800)
+        elif checkbox==0:
+            tooltip("Baby was unwrapped...", period=800)
+        else:
+            raise ValueError("Checkbox state was not expected.")
+
+
+
+    def testSort(self, index):
+        if self.isReview():
+            return
+
+        expected=0
+        for i in range(5):
+            r = self._testSort(index)
+            if r < 0:
+                tooltip("Baby can't run self-tests. Not enough cards in default deck for testing.", period=2000)
+                return
+            expected += r
+
+        # ensure a pass-rate of 3/5 due to unpredictable randomness.
+        assert expected == 5 or (index in (0,11) and expected >= 3), "HoochieBaby, self-test failed. Tested values were not as expected."
+
+        tooltip("Baby sort-test: OK", period=800)
+
+
+    def _testSort(self, index):
+        "This test require some cards put inside the Default anki folder."
+        self.reset()
+        sel = self.setupTestDeck()
+
+        cids = None
+        try:
+            mw.col.sched._fillLrnDay()
+            cids = mw.col.sched._lrnDayQueue[:]
+        finally:
+            mw.col.decks.select(sel)
+            mw.col.sched._resetLrn()
+
+        if not cids or len(cids)<10:
+            return -1
+
+        arr = []
+        for cid in cids:
+            card = mw.col.getCard(cid)
+            if index in (0,9,10,11):
+                arr.append(card.due)
+            elif index in (1,2):
+                arr.append(card.ivl)
+            elif index in (3,4):
+                arr.append(card.reps)
+            elif index in (5,6):
+                arr.append(card.factor)
+            elif index in (7,8):
+                arr.append(card.lapses)
             else:
-                tooltip("Baby was unwrapped...", period=800)
+                raise ValueError("Index was not expected.")
+
+        # print(arr)
+
+        dr = False #desired result
+        if index in (1,3,5,7,9):
+            dr = isSorted(arr, key=lambda x, y: x >= y)
+        elif index in (2,4,6,8,10):
+            dr = isSorted(arr, key=lambda x, y: x <= y)
+        else: #idx = 0 or 11, test random
+            #TODO:
+            #  This test does not account for x >= y
+            #  caused by addon conflicts.
+            not_rand = isSorted(arr, key=lambda x, y: x <= y)
+            if not_rand: #not random, test for same due
+                dr = isSorted(arr, key=lambda x, y: x == y)
+            else:
+                dr = True
+
+        if not dr:
+            return 0
+        return 1
 
 
-run_lrn_tests = LrnTest()
-run_get_card_tests = GetCardTest()
+run_tests = Tests()
