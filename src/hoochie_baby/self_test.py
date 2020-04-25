@@ -26,30 +26,36 @@ class Tests:
         self.state = -1
         self.state_gc = -1
 
-    def isReview(self):
+    def _isReview(self):
         if mw.state == "review":
             tooltip("Baby can't run self-tests during review.", period=1200)
             return True
 
-    def setupTestDeck(self):
-        sel = mw.col.decks.selected()
-        mw.col.decks.select(1)
-        # act = mw.col.decks.active()[:]
-        mw.col.sched._lrnDids = [1]
-        # mw.col.conf['activeDecks'] = [1] #rm subdecks
+    def _selectDeck(self, did=1):
+        old_did = mw.col.decks.selected()
+        mw.col.decks.select(did)
+        mw.col.sched._lrnDids = [did]
+        return old_did
+
+    def _restoreDeck(self, did):
+        mw.col.decks.select(did)
+        mw.col.sched._resetLrn()
+
+    def _setupTestCounts(self):
         mw.col.sched.newCount = 20
         mw.col.sched.revCount = 20
         mw.col.sched.lrnCount = 20
         mw.col.sched._lrnDayQueue = []
-        return sel
+
 
     def testWrap(self, checkbox):
         "This tests for addon conflict, to make sure HoochieBaby was wrapped correctly around fillLrnDay()."
-        if not self.conf.get("run_self_test", True) or self.isReview():
+        if not self.conf.get("run_self_test_wrap", True) or self._isReview():
             return
 
         self.reset()
-        sel = self.setupTestDeck()
+        self._setupTestCounts()
+        old_did = self._selectDeck(1)
         try:
             mw.col.sched._fillLrnDay()
 
@@ -63,7 +69,7 @@ class Tests:
                 assert checkbox == self.state_gc, "HoochieBaby, self-test failed. Test value was not as expected."
 
         finally:
-            mw.col.decks.select(sel)
+            mw.col.decks.select(old_did)
             mw.reset()
 
         if checkbox==1:
@@ -77,16 +83,22 @@ class Tests:
 
 
     def testSort(self, index):
-        if not self.conf.get("run_self_test", True) or self.isReview():
+        if not self.conf.get("run_self_test_sort", False) or self._isReview():
             return
+        if index > 11:
+            raise ValueError("Index was not expected.")
 
         expected=0
-        for i in range(5):
-            r = self._testSort(index)
-            if r < 0:
-                tooltip("Baby can't run self-tests. Not enough cards in default deck for testing.", period=2000)
-                return
-            expected += r
+        old_did = self._selectDeck(1)
+        try:
+            for i in range(5):
+                r = self._testSort(index)
+                if r < 0:
+                    tooltip("Baby can't run self-tests. Not enough cards in default deck for testing.", period=2000)
+                    return
+                expected += r
+        finally:
+            self._restoreDeck(old_did)
 
         # ensure a pass-rate of 3/5 due to unpredictable randomness.
         assert expected == 5 or (index in (0,11) and expected >= 3), "HoochieBaby, self-test failed. Tested values were not as expected."
@@ -97,16 +109,10 @@ class Tests:
     def _testSort(self, index):
         "This test require some cards put inside the Default anki folder."
         self.reset()
-        sel = self.setupTestDeck()
+        self._setupTestCounts()
 
-        cids = None
-        try:
-            mw.col.sched._fillLrnDay()
-            cids = mw.col.sched._lrnDayQueue[:]
-        finally:
-            mw.col.decks.select(sel)
-            mw.col.sched._resetLrn()
-
+        mw.col.sched._fillLrnDay()
+        cids = mw.col.sched._lrnDayQueue
         if not cids or len(cids)<10:
             return -1
 
