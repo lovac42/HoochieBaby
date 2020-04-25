@@ -19,5 +19,5 @@ CUSTOM_SORT = {
   8:["High lapses",  "order by lapses desc, random()"],
   9:["Overdues",     "order by due asc, random()"],
  10:["Dues",         "order by due desc, random()"],
- 11:["Unrestricted Random (HighCPU)",  "order by random()"]
+ 11:["Unrestricted Random (High CPU)",  "order by random()"]
 }
