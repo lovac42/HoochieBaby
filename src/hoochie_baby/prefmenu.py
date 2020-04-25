@@ -22,6 +22,9 @@ loaded = False
 
 
 def setupUi(self, Preferences):
+    global loaded
+    loaded = False
+
     baby_groupbox = muffins.getMuffinsGroupbox(self, "Hoochie Baby!")
     baby_grid_layout = QGridLayout(baby_groupbox)
 
@@ -71,11 +74,6 @@ def load(self, mw):
     loaded = True
 
 
-def save(self):
-    global loaded
-    loaded = False
-
-
 def onClick(form):
     state = int(form.hoochieBaby.checkState())
     mw.col.conf['hoochieBaby'] = state
@@ -118,6 +116,6 @@ aqt.preferences.Preferences.__init__ = wrap(
     aqt.preferences.Preferences.__init__, load, "after"
 )
 
-aqt.preferences.Preferences.accept = wrap(
-    aqt.preferences.Preferences.accept, save, "before"
-)
+# aqt.preferences.Preferences.accept = wrap(
+    # aqt.preferences.Preferences.accept, save, "before"
+# )
