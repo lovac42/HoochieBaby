@@ -2,7 +2,7 @@
 set ZIP=C:\PROGRA~1\7-Zip\7z.exe a -tzip -y -r
 set REPO=hoochie_baby
 set PACKID=1847358755
-set VERSION=0.2.2
+set VERSION=0.2.3
 
 
 echo %VERSION% >%REPO%\VERSION
