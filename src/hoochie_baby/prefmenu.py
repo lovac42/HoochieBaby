@@ -8,7 +8,6 @@ import aqt
 import aqt.preferences
 from aqt import mw
 from aqt.qt import *
-from anki.lang import _
 from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
@@ -41,25 +40,25 @@ def setupUi(self, Preferences):
 
     r+=1
     self.hoochieBabySortLbl = QLabel(baby_groupbox)
-    self.hoochieBabySortLbl.setText(_("      Sort day-learning cards by:"))
+    self.hoochieBabySortLbl.setText("      Sort day-learning cards by:")
     baby_grid_layout.addWidget(self.hoochieBabySortLbl, r, 0, 1, 1)
 
     self.hoochieBabySort = QComboBox(baby_groupbox)
     sort_itms = CUSTOM_SORT.iteritems if ANKI20 else CUSTOM_SORT.items
     for i,v in sort_itms():
         self.hoochieBabySort.addItem("")
-        self.hoochieBabySort.setItemText(i, _(v[0]))
+        self.hoochieBabySort.setItemText(i, v[0])
     baby_grid_layout.addWidget(self.hoochieBabySort, r, 1, 1, 3)
     self.hoochieBabySort.currentIndexChanged.connect(lambda:onChanged(self.hoochieBabySort))
 
     r+=1
     self.baby_footnoteA = QLabel(baby_groupbox)
-    self.baby_footnoteA.setText(_("&nbsp;&nbsp;&nbsp;<i>* This addon does not randomize intra-day learning cards, yet.</i>"))
+    self.baby_footnoteA.setText("&nbsp;&nbsp;&nbsp;<i>* This addon does not randomize intra-day learning cards, yet.</i>")
     baby_grid_layout.addWidget(self.baby_footnoteA, r, 0, 1, 3)
 
     r+=1
     self.baby_footnoteB = QLabel(baby_groupbox)
-    self.baby_footnoteB.setText(_('&nbsp;&nbsp;&nbsp;<i>** Double check your settings for "Learn ahead limit" and RTFM.</i>'))
+    self.baby_footnoteB.setText('&nbsp;&nbsp;&nbsp;<i>** Double check your settings for "Learn ahead limit" and RTFM.</i>')
     baby_grid_layout.addWidget(self.baby_footnoteB, r, 0, 1, 3)
 
 
