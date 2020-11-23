@@ -10,4 +10,4 @@ ADDON_PATH = os.path.dirname(__file__)
 
 ADDON_NAME = "HoochieBaby"
 
-TARGET_STABLE_VERSION = 23
+TARGET_STABLE_VERSION = 35
