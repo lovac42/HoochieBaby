@@ -4,7 +4,6 @@
 
 
 from aqt.qt import *
-from anki.lang import _
 
 
 class TristateCheckbox(QCheckBox):
@@ -22,7 +21,7 @@ class TristateCheckbox(QCheckBox):
     def onStateChanged(self, state):
         assert Qt.Unchecked <= state <= Qt.Checked
         desc = self._descriptions[state]
-        self.setText(_(desc))
+        self.setText(desc)
 
     def getDescriptions(self):
         return self._descriptions
