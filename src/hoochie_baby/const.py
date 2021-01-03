@@ -11,3 +11,5 @@ ADDON_PATH = os.path.dirname(__file__)
 ADDON_NAME = "HoochieBaby"
 
 TARGET_STABLE_VERSION = 35
+
+DEFAULT_PROBABILITY = (3,0,1,2,3)

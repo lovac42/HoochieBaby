@@ -19,14 +19,18 @@ from aqt import mw
 from anki.hooks import wrap
 
 from .sort import CUSTOM_SORT
+from .const import DEFAULT_PROBABILITY
 from .self_test import run_tests
 from .lib.com.lovac42.anki.version import ANKI20
 
 RAND = random.Random().shuffle
 
 
+_last_Type = 0
 
 def getCard(self, _old):
+    global _last_Type
+
     qc = self.col.conf
     state = qc.get("hoochieBaby", 0)
     run_tests.state_gc = state
@@ -35,7 +39,11 @@ def getCard(self, _old):
         c=None #ret card
         self._fillLrn() #REQUIRED: Ensures lrn queue is built before any lapses are pushed onto the stack
 
-        type=random.randint(0,3)
+        #FIXME: This is not a good way to access conf data!
+        p=run_tests.conf.get("choice_probability", DEFAULT_PROBABILITY)
+        # print(p)
+
+        type=random.choice(p)
         if type==1:
             try: #Ensure cards don't repeat as lrn card back-to-back (from revQ to lrnQ)
                 id=self._lrnQueue[0][1]
@@ -45,9 +53,10 @@ def getCard(self, _old):
             except IndexError: pass
         elif type==2:
             c = self._getLrnDayCard()
-        elif type==3:
+        elif type==0 and _last_Type:
             c = self._getNewCard()
 
+        _last_Type = type
         if not c:
             c = self._getRevCard()
         if c: return c

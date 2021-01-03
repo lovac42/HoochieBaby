@@ -1,4 +1,5 @@
 {
 	"run_self_test_wrap": true,
-	"run_self_test_sort": false
+	"run_self_test_sort": false,
+	"choice_probability": [3,0,1,2,3]
 }
